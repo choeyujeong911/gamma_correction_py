@@ -9,15 +9,9 @@ orig_img_RGB = [cv2.imread(orig_img_path[0]), cv2.imread(orig_img_path[1]), cv2.
 height, width, _ = orig_img_RGB[0].shape
 
 ## 단계 1. RGB를 YUV로 변환합니다.
-orig_img_YUV_cv = []
 orig_img_YUV = []
 for i in range(NUM_OF_IMG):
-    # 논문의 방식을 따르지 않고 OpenCV 자체에 내장된 메소드를 활용하여 YUV 이미지를 생성합니다.
-    # orig_img_YUV_cv.append(cv2.cvtColor(orig_img_RGB[i], cv2.COLOR_RGB2YUV))
-    # filename = './0__orig_img/cv_' + str(i + 1) + '.png'
-    # cv2.imwrite(filename, orig_img_YUV_cv[i])
-
-    # 논문의 방식대로 행렬의 곱을 활용해 직접 YUV 이미지를 생성합니다.
+    # 행렬의 곱을 활용해 직접 YUV 이미지를 생성합니다.
     tmp = np.zeros((height, width, 3), dtype=np.uint8)
     for h in range(height):
         for w in range(width):
@@ -31,30 +25,25 @@ print("> > 1단계(RGB-YUV 변환) 완료")
 print()
 
 ## 단계 2. 이미지가 저조도 이미지인지 판단합니다.
-# is_it_dark_cv = []
 is_it_dark = []
 for i in range(NUM_OF_IMG):
     # Y_sum_cv = 0
     Y_sum = 0
     for h in range(height):
         for w in range(width):
-            # Y_sum_cv += orig_img_YUV_cv[i][h, w, 0]    # OpenCV로 생성한 YUV 이미지
-            Y_sum += orig_img_YUV[i][h, w, 0]          # 직접 생성한 YUV 이미지
-    # Y_mean_cv = Y_sum_cv / (height * width)
-    # is_it_dark_cv.append(bool(Y_mean_cv < 40.0))
+            Y_sum += orig_img_YUV[i][h, w, 0]
     Y_mean = Y_sum / (height * width)
     print("* img_{0}.png의 Y_mean: {1:.2f}".format(i + 1, Y_mean))
     is_it_dark.append(bool(Y_mean < 40.0))
     print("> 저조도 이미지 ? : {0}".format(is_it_dark[i]))
-    # print(is_it_dark_cv)
 print("> > 2단계(저조도 이미지 판단) 완료")
 print()
 
 ## 단계 3. 저조도로 판단된 모든 이미지(RGB)에 대해 Gamma Correction을 적용합니다.
-dstimg = []
 lookupTable = []
 for i in range(256):    # 룩업테이블(상수 리스트)을 정의합니다.
     lookupTable.append((i / 255) ** GAMMA_CORRECTION)
+dstimg = []
 for i in range(NUM_OF_IMG): # 룩업테이블을 기반으로 Gamma Correction을 적용합니다.
     if is_it_dark[i]:
         tmp = np.zeros((height, width, 3), dtype=np.uint8)
